@@ -1,68 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UK Property Management Hub</title>
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter var', 'sans-serif'],
-          },
-        },
-      },
-      darkMode: 'class',
-    }
-  </script>
-  <style>
-    :root {
-      font-family: 'Inter', sans-serif;
-    }
-    @supports (font-variation-settings: normal) {
-      :root {
-        font-family: 'Inter var', sans-serif;
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UK Property Management Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {},
+        }
       }
-    }
-    /* Custom scrollbar for webkit browsers */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background-color: #cbd5e1; /* slate-300 */
-      border-radius: 4px;
-    }
-    .dark ::-webkit-scrollbar-thumb {
-      background-color: #475569; /* slate-600 */
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background-color: #94a3b8; /* slate-400 */
-    }
-    .dark ::-webkit-scrollbar-thumb:hover {
-      background-color: #64748b; /* slate-500 */
-    }
-  </style>
+    </script>
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
   <script type="importmap">
-  {
-    "imports": {
-      "react/": "https://aistudiocdn.com/react@^19.2.0/",
-      "react": "https://aistudiocdn.com/react@^19.2.0",
-      "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
-      "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-      "jspdf": "https://aistudiocdn.com/jspdf@^3.0.3",
-      "jspdf-autotable": "https://aistudiocdn.com/jspdf-autotable@^3.8.2"
-    }
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "recharts/": "https://aistudiocdn.com/recharts@^2.13.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^2.13.0"
   }
-  </script>
+}
+</script>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900">
-  <div id="root"></div>
-  <script type="module" src="./index.tsx"></script>
-</body>
+  <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

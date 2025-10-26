@@ -21,6 +21,7 @@ const Guidance: React.FC = () => {
       setResponse(result);
     } catch (e) {
       setError('Failed to get guidance. Please try again.');
+      console.error(e);
     } finally {
       setIsLoading(false);
     }

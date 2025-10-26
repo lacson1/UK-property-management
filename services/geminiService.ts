@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import { MaintenanceUrgency, Property, MaintenanceRequest, Tenant, DocumentType, Transaction } from '../types';
+import { MaintenanceUrgency, Property, MaintenanceRequest, Tenant, AISuggestion } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
@@ -18,6 +18,7 @@ export const getGuidance = async (prompt: string): Promise<string> => {
         });
         return response.text;
     } catch (error) {
+        console.error('Error getting guidance from Gemini:', error);
         throw new Error('Failed to fetch guidance from AI service.');
     }
 };
@@ -69,6 +70,7 @@ export const triageMaintenanceRequest = async (issueDescription: string): Promis
         }
        
     } catch (error) {
+        console.error('Error triaging maintenance request with Gemini:', error);
         // Fallback for safety
         return {
             urgency: MaintenanceUrgency.Medium,
@@ -79,7 +81,6 @@ export const triageMaintenanceRequest = async (issueDescription: string): Promis
 
 export interface DocumentInfo {
     expiryDate: string | null;
-    documentType: DocumentType | null;
 }
 
 const documentInfoSchema = {
@@ -89,19 +90,12 @@ const documentInfoSchema = {
             type: Type.STRING,
             description: "The expiry date of the document in YYYY-MM-DD format. If no date is found, this should be null.",
         },
-        documentType: {
-            type: Type.STRING,
-            description: "The type of the document.",
-            enum: Object.values(DocumentType),
-        }
     },
-    required: ['expiryDate', 'documentType'],
+    required: ['expiryDate'],
 };
 
 export const extractDocumentInfo = async (base64ImageData: string, mimeType: string): Promise<DocumentInfo> => {
-    const prompt = `Analyze this document image. Identify its type and find the expiration date ('valid until' date, or expiry date).
-    - The document type must be one of: ${Object.values(DocumentType).join(', ')}. If it doesn't fit, classify as 'Other'.
-    - Return the expiration date in YYYY-MM-DD format. If no specific expiry date is found, return null for the expiryDate field.`;
+    const prompt = "Analyze this document image and find the expiration date, 'valid until' date, or expiry date. Return the date in YYYY-MM-DD format. If no specific expiry date is found, return null for the expiryDate field.";
 
     try {
         const imagePart = {
@@ -124,97 +118,84 @@ export const extractDocumentInfo = async (base64ImageData: string, mimeType: str
         const result = JSON.parse(jsonText);
 
         if (result && (typeof result.expiryDate === 'string' || result.expiryDate === null)) {
-            const docType = Object.values(DocumentType).includes(result.documentType) ? result.documentType : DocumentType.Other;
-            return { expiryDate: result.expiryDate, documentType: docType };
+            return result;
         }
 
-        return { expiryDate: null, documentType: DocumentType.Other };
+        console.warn('AI response for document info was not in the expected format.', result);
+        return { expiryDate: null };
 
     } catch (error) {
-        return { expiryDate: null, documentType: DocumentType.Other }; // Fallback
+        console.error('Error extracting document info with Gemini:', error);
+        return { expiryDate: null }; // Fallback
     }
 };
 
 
-export const getPortfolioSummary = async (
+const suggestionsSchema = {
+    type: Type.ARRAY,
+    items: {
+        type: Type.OBJECT,
+        properties: {
+            title: {
+                type: Type.STRING,
+                description: "A short, concise title for the suggestion.",
+            },
+            suggestion: {
+                type: Type.STRING,
+                description: "A detailed, actionable suggestion for the property manager.",
+            },
+        },
+        required: ["title", "suggestion"],
+    },
+};
+
+export const getTopSuggestions = async (
     properties: Property[],
     maintenanceRequests: MaintenanceRequest[],
     tenants: Tenant[]
-): Promise<string> => {
-    const portfolioData = {
-        properties,
-        maintenanceRequests,
-        tenants,
-    };
+): Promise<AISuggestion[]> => {
+    const portfolioSummary = `
+        Here is a summary of my UK property portfolio:
+        - Total Properties: ${properties.length}
+        - Properties Details: ${JSON.stringify(properties, null, 2)}
+        - Active Tenants: ${tenants.length}
+        - Tenants Details: ${JSON.stringify(tenants, null, 2)}
+        - Maintenance Requests: ${maintenanceRequests.length}
+        - Maintenance Details: ${JSON.stringify(maintenanceRequests, null, 2)}
+    `;
 
     const prompt = `
-        You are an AI summarizer for a property portfolio management system. Create a 3-line summary highlighting:
-        - Total number of properties
-        - Key statuses (Occupied, Vacant, Overdue)
-        - Top recommendation for the user
+        Based on the following UK property portfolio summary, act as an expert property management consultant.
+        Identify potential risks, opportunities for improvement, and upcoming deadlines.
+        Provide exactly 10 actionable and insightful suggestions to help me manage my portfolio more effectively.
+        Focus on things like preventative maintenance, tenant relations, compliance, and financial optimization.
+        Today's date is ${new Date().toISOString().split('T')[0]}.
 
-        Input: ${JSON.stringify(portfolioData)}
-        
-        Output format:
-        Summary: ...
-        Status: ...
-        Recommendation: ...`;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-
-        return response.text;
-
-    } catch (error) {
-        throw new Error('Failed to fetch summary from AI service.');
-    }
-};
-
-export const getTaxSummary = async (
-    transactions: Transaction[],
-    propertyAddress: string,
-    taxYear: string
-): Promise<string> => {
-    
-    const prompt = `
-        You are an AI accountant specializing in UK property rental tax for landlords.
-        Based on the following financial transaction data for the UK tax year ${taxYear}, generate a summary suitable for a tax self-assessment return.
-        The data is for the property at: ${propertyAddress}.
-
-        Your summary must include:
-        1.  **Total Rental Income:** Sum of all 'Income' transactions.
-        2.  **Total Allowable Expenses:** Sum of all 'Expense' transactions.
-        3.  **Net Profit or Loss:** The result of Total Income minus Total Expenses.
-        4.  **Narrative Summary:** A brief, professional paragraph summarizing the financial performance for the year. This should mention the key figures.
-
-        Here is the transaction data:
-        ${JSON.stringify(transactions)}
-
-        Format the entire output using Markdown. Use headings for each section.
-        For example:
-        ### Tax Summary for [Property Address]
-        **Tax Year:** ${taxYear}
-        
-        #### Financial Breakdown
-        - **Total Income:** £...
-        - **Total Expenses:** £...
-        - **Net Profit/Loss:** £...
-
-        #### Narrative Summary
-        ...
+        ${portfolioSummary}
     `;
 
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: suggestionsSchema,
+            },
         });
-        return response.text;
-    } catch (error) {
-         throw new Error('Failed to generate tax summary from AI service.');
-    }
 
+        const jsonText = response.text.trim();
+        const result = JSON.parse(jsonText);
+        
+        if (Array.isArray(result) && result.every(item => 'title' in item && 'suggestion' in item)) {
+            return result as AISuggestion[];
+        }
+
+        console.warn('AI response for suggestions was not in the expected format.', result);
+        throw new Error('Invalid suggestions response from AI.');
+
+    } catch (error) {
+        console.error('Error getting top suggestions from Gemini:', error);
+        throw new Error('Failed to fetch suggestions from AI service.');
+    }
 };

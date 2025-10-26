@@ -26,22 +26,18 @@ const UploadDocumentModal: React.FC<{
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
+        if (file && file.type.startsWith('image/')) {
             setSelectedFile(file);
             setError('');
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setPreview(reader.result as string);
-                };
-                reader.readAsDataURL(file);
-            } else {
-                setPreview(null); // No preview for PDF
-            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         } else {
             setSelectedFile(null);
             setPreview(null);
-            setError('Please select an image or PDF file.');
+            setError('Please select an image file (e.g., PNG, JPG).');
         }
     };
 
@@ -89,14 +85,14 @@ const UploadDocumentModal: React.FC<{
                         }`}
                         onClick={() => !(isUploading || isSuccess) && fileInputRef.current?.click()}
                     >
-                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" disabled={isUploading || isSuccess} />
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" disabled={isUploading || isSuccess} />
                         {preview ? (
                             <img src={preview} alt="Preview" className="max-h-40 mx-auto rounded-md" />
                         ) : (
                             <div className="text-slate-500 dark:text-slate-400">
                                 <UploadIcon className="h-10 w-10 mx-auto mb-2" />
-                                <p>Click to browse or drag & drop a file.</p>
-                                <p className="text-xs mt-1">PNG, JPG, PDF up to 10MB</p>
+                                <p>Click to browse or drag & drop an image file here.</p>
+                                <p className="text-xs mt-1">PNG, JPG, GIF up to 10MB</p>
                             </div>
                         )}
                     </div>
@@ -150,16 +146,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, maintenanceRe
       }
       return <span className="font-mono text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">{doc.expiryDate}</span>;
   };
-  
-  const renderDocType = (doc: Document) => {
-    if (doc.documentType === 'extracting...') {
-        return <span className="text-xs text-sky-600 dark:text-sky-400">Analyzing...</span>;
-    }
-    if (doc.documentType) {
-        return <span className="text-xs text-slate-500 dark:text-slate-400">{doc.documentType}</span>;
-    }
-    return null;
-}
 
   return (
     <main className="p-4 sm:p-6 lg:p-8">
@@ -172,8 +158,9 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, maintenanceRe
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Details & Finance */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Property Details</h3>
+           <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Property & Tenant Details</h3>
+            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-slate-500 dark:text-slate-400">Status</p>
@@ -188,25 +175,25 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, maintenanceRe
                 <p className="font-medium text-slate-700 dark:text-slate-200">{formatCurrency(property.currentRent)}/month</p>
               </div>
             </div>
-          </div>
-            <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Tenant Information</h3>
+
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <h4 className="text-md font-semibold text-slate-700 dark:text-slate-200 mb-3">Current Tenant</h4>
                 {currentTenant ? (
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                         <div>
                             <p className="text-slate-500 dark:text-slate-400">Name</p>
                             <p className="font-medium text-slate-700 dark:text-slate-200">{currentTenant.name}</p>
                         </div>
-                        <div>
+                         <div>
+                            <p className="text-slate-500 dark:text-slate-400">Lease End</p>
+                            <p className="font-medium text-slate-700 dark:text-slate-200">{currentTenant.leaseEndDate}</p>
+                        </div>
+                        <div className="sm:col-span-2">
                             <p className="text-slate-500 dark:text-slate-400">Contact</p>
                             <p className="font-medium text-slate-700 dark:text-slate-200">{currentTenant.email}</p>
                             <p className="font-medium text-slate-700 dark:text-slate-200">{currentTenant.phone}</p>
                         </div>
-                        <div>
-                            <p className="text-slate-500 dark:text-slate-400">Lease End</p>
-                            <p className="font-medium text-slate-700 dark:text-slate-200">{currentTenant.leaseEndDate}</p>
-                        </div>
-                         <div>
+                         <div className="sm:col-span-2">
                             <p className="text-slate-500 dark:text-slate-400">Deposit</p>
                             <p className="font-medium text-slate-700 dark:text-slate-200">{formatCurrency(currentTenant.depositAmount)} ({currentTenant.depositScheme})</p>
                         </div>
@@ -218,6 +205,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, maintenanceRe
                     </div>
                 )}
             </div>
+          </div>
         </div>
         {/* Right Column: Maintenance & Documents */}
         <div className="space-y-6">
@@ -260,12 +248,9 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, maintenanceRe
                                     <a href={doc.fileDataUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-sky-700 dark:text-sky-400 hover:underline truncate block" title={doc.fileName}>
                                         {doc.fileName}
                                     </a>
-                                     <div className="flex items-center justify-between mt-1">
-                                        {renderDocType(doc)}
-                                        <div className="flex items-center gap-1">
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Expiry:</p>
-                                            {renderExpiryDate(doc)}
-                                        </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Expiry Date:</p>
+                                        {renderExpiryDate(doc)}
                                     </div>
                                 </div>
                             </div>
@@ -274,7 +259,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, maintenanceRe
                                    <>
                                     <SparkleIcon className="h-4 w-4 text-sky-500" />
                                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 text-xs text-white bg-slate-700 dark:bg-slate-900 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                        Data extracted by AI
+                                        Date extracted by AI
                                     </span>
                                    </>
                                 )}

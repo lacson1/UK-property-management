@@ -1,15 +1,4 @@
-// FIX: Replaced circular import with a complete definition of the View type
-// to resolve the "Type alias 'View' circularly references itself" error.
-export type View =
-  | 'dashboard'
-  | 'properties'
-  | 'tenants'
-  | 'maintenance'
-  | 'tradespeople'
-  | 'finance'
-  | 'guidance'
-  | 'documents'
-  | 'reports';
+export type View = 'dashboard' | 'properties' | 'maintenance' | 'finance' | 'guidance' | 'tenants';
 
 export enum PropertyStatus {
   Occupied = 'Occupied',
@@ -40,10 +29,7 @@ export interface Property {
 export enum MaintenanceStatus {
   New = 'New',
   InProgress = 'In Progress',
-  AwaitingQuote = 'Awaiting Quote',
-  QuoteApproved = 'Quote Approved',
-  WorkComplete = 'Work Complete', // Work done, awaiting invoice/payment
-  Completed = 'Completed', // Invoice paid, closed
+  Completed = 'Completed',
 }
 
 export enum MaintenanceUrgency {
@@ -53,15 +39,6 @@ export enum MaintenanceUrgency {
   Emergency = 'Emergency',
 }
 
-export interface Quote {
-  id: string;
-  tradespersonId: string;
-  tradespersonName: string;
-  amount: number;
-  details: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
-}
-
 export interface MaintenanceRequest {
   id: string;
   propertyId: string;
@@ -69,10 +46,7 @@ export interface MaintenanceRequest {
   issue: string;
   status: MaintenanceStatus;
   urgency: MaintenanceUrgency;
-  suggestedTradesperson: string; // AI suggestion
-  assignedTradespersonId: string | null; // Assigned from user's list
-  quotes: Quote[];
-  finalInvoiceUrl: string | null;
+  suggestedTradesperson: string;
   reportedDate: string;
   cost: number;
 }
@@ -92,19 +66,11 @@ export interface Transaction {
   date: string;
 }
 
-export enum DocumentType {
-    GasSafety = 'Gas Safety Certificate',
-    EICR = 'Electrical Installation Condition Report (EICR)',
-    EPC = 'Energy Performance Certificate (EPC)',
-    Other = 'Other',
-}
-
 export interface Document {
   id: string;
   propertyId: string;
   fileName: string;
   fileType: string;
-  documentType: DocumentType | null | 'extracting...';
   fileDataUrl: string; // Data URL for viewing/linking
   expiryDate: string | null | 'extracting...' | 'extraction-failed';
 }
@@ -128,9 +94,7 @@ export interface Tenant {
     depositScheme: DepositScheme;
 }
 
-export interface Tradesperson {
-    id: string;
-    name: string;
-    trade: string;
-    contact: string;
+export interface AISuggestion {
+    title: string;
+    suggestion: string;
 }

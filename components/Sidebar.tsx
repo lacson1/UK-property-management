@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from '../types';
-import { DashboardIcon, PropertiesIcon, MaintenanceIcon, GuidanceIcon, FinanceIcon, SunIcon, MoonIcon, UsersIcon, XIcon, WrenchIcon, DocumentIcon, ChartBarIcon } from './Icons';
+import { DashboardIcon, PropertiesIcon, MaintenanceIcon, GuidanceIcon, FinanceIcon, SunIcon, MoonIcon, UsersIcon, XIcon } from './Icons';
 
 interface SidebarProps {
   currentView: View;
@@ -16,10 +16,7 @@ const navItems = [
   { id: 'properties', label: 'Properties', icon: PropertiesIcon },
   { id: 'tenants', label: 'Tenants', icon: UsersIcon },
   { id: 'maintenance', label: 'Maintenance', icon: MaintenanceIcon },
-  { id: 'documents', label: 'Documents', icon: DocumentIcon },
-  { id: 'tradespeople', label: 'Tradespeople', icon: WrenchIcon },
   { id: 'finance', label: 'Finance', icon: FinanceIcon },
-  { id: 'reports', label: 'Reports', icon: ChartBarIcon },
   { id: 'guidance', label: 'AI Guidance', icon: GuidanceIcon },
 ];
 

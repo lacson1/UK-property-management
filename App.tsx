@@ -7,12 +7,50 @@ import Finance from './components/Finance';
 import Guidance from './components/Guidance';
 import PropertyDetail from './components/PropertyDetail';
 import Tenants from './components/Tenants';
-import Tradespeople from './components/Tradespeople';
-import Documents from './components/Documents';
-import Reports from './components/Reports';
 import Header from './components/Header';
-import { View, Property, MaintenanceRequest, Transaction, Document, Tenant, Tradesperson, PropertyStatus, RentStatus, PropertyType, MaintenanceStatus, MaintenanceUrgency, TransactionType, DepositScheme } from './types';
+import { View, Property, MaintenanceRequest, Transaction, Document, Tenant, PropertyStatus, RentStatus, PropertyType, MaintenanceStatus, MaintenanceUrgency, TransactionType, DepositScheme } from './types';
 import { triageMaintenanceRequest, extractDocumentInfo } from './services/geminiService';
+
+// Mock Data
+const initialProperties: Property[] = [
+  { id: 'p1', address: '123 Coronation Street, Manchester', type: PropertyType.Personal, status: PropertyStatus.Occupied, rentStatus: RentStatus.Paid, currentRent: 1200 },
+  { id: 'p2', address: '22 Baker Street, London', type: PropertyType.LTD, status: PropertyStatus.Occupied, rentStatus: RentStatus.Overdue, currentRent: 2500 },
+  { id: 'p3', address: '15 Princes Street, Edinburgh', type: PropertyType.LTD, status: PropertyStatus.Vacant, rentStatus: RentStatus.Paid, currentRent: 1500 },
+  { id: 'p4', address: '45 Broad Street, Bristol', type: PropertyType.Personal, status: PropertyStatus.Occupied, rentStatus: RentStatus.Paid, currentRent: 950 },
+  { id: 'p5', address: '8 Abbey Road, Liverpool', type: PropertyType.LTD, status: PropertyStatus.UnderOffer, rentStatus: RentStatus.Paid, currentRent: 800 },
+];
+
+const initialTenants: Tenant[] = [
+    { id: 't1', name: 'John Smith', email: 'john.smith@example.com', phone: '07123456789', propertyId: 'p1', propertyAddress: '123 Coronation Street, Manchester', leaseStartDate: '2023-08-01', leaseEndDate: '2024-07-31', depositAmount: 1500, depositScheme: DepositScheme.DPS },
+    { id: 't2', name: 'Jane Doe', email: 'jane.doe@example.com', phone: '07987654321', propertyId: 'p2', propertyAddress: '22 Baker Street, London', leaseStartDate: '2022-05-15', leaseEndDate: '2024-05-14', depositAmount: 3000, depositScheme: DepositScheme.MyDeposits },
+    { id: 't3', name: 'Peter Jones', email: 'peter.jones@example.com', phone: '07777111222', propertyId: 'p4', propertyAddress: '45 Broad Street, Bristol', leaseStartDate: '2024-01-10', leaseEndDate: '2025-01-09', depositAmount: 1100, depositScheme: DepositScheme.TDS },
+];
+
+const initialMaintenance: MaintenanceRequest[] = [
+  { id: 'm1', propertyId: 'p2', propertyAddress: '22 Baker Street, London', issue: 'Leaking tap in kitchen', status: MaintenanceStatus.New, urgency: MaintenanceUrgency.Medium, suggestedTradesperson: 'Plumber', reportedDate: '2024-05-20', cost: 0 },
+  { id: 'm2', propertyId: 'p1', propertyAddress: '123 Coronation Street, Manchester', issue: 'Boiler not providing hot water', status: MaintenanceStatus.InProgress, urgency: MaintenanceUrgency.High, suggestedTradesperson: 'Gas Engineer', reportedDate: '2024-05-18', cost: 0 },
+  { id: 'm3', propertyId: 'p4', propertyAddress: '45 Broad Street, Bristol', issue: 'Fence panel blown down in storm', status: MaintenanceStatus.Completed, urgency: MaintenanceUrgency.Low, suggestedTradesperson: 'General Handyman', reportedDate: '2024-04-10', cost: 150 },
+  { id: 'm4', propertyId: 'p2', propertyAddress: '22 Baker Street, London', issue: 'Front door lock is sticking', status: MaintenanceStatus.Completed, urgency: MaintenanceUrgency.Medium, suggestedTradesperson: 'Locksmith', reportedDate: '2024-03-25', cost: 85 },
+  { id: 'm5', propertyId: 'p3', propertyAddress: '15 Princes Street, Edinburgh', issue: 'End of tenancy deep clean required', status: MaintenanceStatus.New, urgency: MaintenanceUrgency.Low, suggestedTradesperson: 'Cleaning Service', reportedDate: '2024-05-21', cost: 0 },
+];
+
+const initialTransactions: Transaction[] = [
+  // May
+  { id: 'tr1', propertyId: 'p1', propertyAddress: '123 Coronation Street, Manchester', type: TransactionType.Income, description: 'May Rent', amount: 1200, date: '2024-05-01' },
+  { id: 'tr2', propertyId: 'p2', propertyAddress: '22 Baker Street, London', type: TransactionType.Income, description: 'May Rent', amount: 2500, date: '2024-05-01' },
+  { id: 'tr3', propertyId: 'p4', propertyAddress: '45 Broad Street, Bristol', type: TransactionType.Income, description: 'May Rent', amount: 950, date: '2024-05-01' },
+  // April
+  { id: 'tr4', propertyId: 'p1', propertyAddress: '123 Coronation Street, Manchester', type: TransactionType.Income, description: 'April Rent', amount: 1200, date: '2024-04-01' },
+  { id: 'tr5', propertyId: 'p2', propertyAddress: '22 Baker Street, London', type: TransactionType.Income, description: 'April Rent', amount: 2500, date: '2024-04-01' },
+  { id: 'tr6', propertyId: 'p4', propertyAddress: '45 Broad Street, Bristol', type: TransactionType.Income, description: 'April Rent', amount: 950, date: '2024-04-01' },
+  { id: 'tr7', propertyId: 'p4', propertyAddress: '45 Broad Street, Bristol', type: TransactionType.Expense, description: 'Fence Repair', amount: 150, date: '2024-04-12' },
+  // March
+  { id: 'tr8', propertyId: 'p1', propertyAddress: '123 Coronation Street, Manchester', type: TransactionType.Income, description: 'March Rent', amount: 1200, date: '2024-03-01' },
+  { id: 'tr9', propertyId: 'p2', propertyAddress: '22 Baker Street, London', type: TransactionType.Income, description: 'March Rent', amount: 2500, date: '2024-03-01' },
+  { id: 'tr10', propertyId: 'p4', propertyAddress: '45 Broad Street, Bristol', type: TransactionType.Income, description: 'March Rent', amount: 950, date: '2024-03-01' },
+  { id: 'tr11', propertyId: 'p2', propertyAddress: '22 Baker Street, London', type: TransactionType.Expense, description: 'Locksmith for front door', amount: 85, date: '2024-03-26' },
+  { id: 'tr12', propertyId: 'p3', propertyAddress: '15 Princes Street, Edinburgh', type: TransactionType.Expense, description: 'Gas Safety Certificate', amount: 75, date: '2024-03-15' },
+];
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -20,12 +58,11 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [properties, setProperties] = useState<Property[]>(initialProperties);
+  const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>(initialMaintenance);
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [tradespeople, setTradespeople] = useState<Tradesperson[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
 
   useEffect(() => {
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -54,60 +91,24 @@ const App: React.FC = () => {
     setSelectedProperty(null);
   };
 
-  const handleAddProperty = (propertyData: Omit<Property, 'id' | 'rentStatus'>) => {
-    const newProperty: Property = {
-      ...propertyData,
-      id: `p${Date.now()}`,
-      // If vacant, rent status is neutral. If occupied, default to overdue to prompt for first payment record.
-      rentStatus: propertyData.status === PropertyStatus.Vacant ? RentStatus.Paid : RentStatus.Overdue,
-    };
-    setProperties(prev => [newProperty, ...prev]);
-  };
-
   const handleAddRequest = async (propertyId: string, issue: string) => {
     const triageResult = await triageMaintenanceRequest(issue);
     const property = properties.find(p => p.id === propertyId);
     if (!property) return;
     
     const newRequest: MaintenanceRequest = {
-        id: `m${Date.now()}`,
+        id: `m${maintenanceRequests.length + 1}`,
         propertyId,
         propertyAddress: property.address,
         issue,
         status: MaintenanceStatus.New,
         urgency: triageResult.urgency,
         suggestedTradesperson: triageResult.suggestedTradesperson,
-        assignedTradespersonId: null,
-        quotes: [],
-        finalInvoiceUrl: null,
         reportedDate: new Date().toISOString().split('T')[0],
         cost: 0,
     };
     setMaintenanceRequests(prev => [newRequest, ...prev]);
   };
-
-  const handleUpdateMaintenanceRequest = (updatedRequest: MaintenanceRequest) => {
-    setMaintenanceRequests(prev => prev.map(req => req.id === updatedRequest.id ? updatedRequest : req));
-  };
-
-  const handleCompleteMaintenanceAndAddExpense = (
-    request: MaintenanceRequest,
-    cost: number,
-    invoiceUrl: string | null
-  ) => {
-    const updatedRequest = { ...request, cost, finalInvoiceUrl: invoiceUrl, status: MaintenanceStatus.Completed };
-    handleUpdateMaintenanceRequest(updatedRequest);
-    
-    const expenseDescription = `Maintenance: ${request.issue}`;
-    handleAddTransaction({
-        propertyId: request.propertyId,
-        type: TransactionType.Expense,
-        description: expenseDescription,
-        amount: cost,
-        date: new Date().toISOString().split('T')[0],
-    });
-  };
-
 
   const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'propertyAddress'>) => {
       const property = properties.find(p => p.id === newTransaction.propertyId);
@@ -115,21 +116,10 @@ const App: React.FC = () => {
 
       const fullTransaction: Transaction = {
         ...newTransaction,
-        id: `t${Date.now()}`,
+        id: `t${transactions.length + 1}`,
         propertyAddress: property.address,
       };
       setTransactions(prev => [fullTransaction, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      
-      // Automatically update rent status if income matches or exceeds rent amount
-      if (newTransaction.type === TransactionType.Income && newTransaction.amount >= property.currentRent) {
-          setProperties(prevProperties => 
-              prevProperties.map(p => 
-                  p.id === newTransaction.propertyId 
-                  ? { ...p, rentStatus: RentStatus.Paid } 
-                  : p
-              )
-          );
-      }
   };
 
    const handleAddTenant = (tenantData: Omit<Tenant, 'id' | 'propertyAddress'>) => {
@@ -138,20 +128,12 @@ const App: React.FC = () => {
 
         const newTenant: Tenant = {
             ...tenantData,
-            id: `ten${Date.now()}`,
+            id: `ten${tenants.length + 1}`,
             propertyAddress: property.address,
         };
         setTenants(prev => [...prev, newTenant]);
         // Also update the property status to Occupied
-        setProperties(prev => prev.map(p => p.id === tenantData.propertyId ? { ...p, status: PropertyStatus.Occupied, rentStatus: RentStatus.Overdue } : p));
-    };
-
-    const handleAddTradesperson = (tradespersonData: Omit<Tradesperson, 'id'>) => {
-      const newTradesperson: Tradesperson = {
-        ...tradespersonData,
-        id: `tp-${Date.now()}`,
-      };
-      setTradespeople(prev => [...prev, newTradesperson]);
+        setProperties(prev => prev.map(p => p.id === tenantData.propertyId ? { ...p, status: PropertyStatus.Occupied } : p));
     };
   
   const fileToDataUrl = (file: File): Promise<string> => {
@@ -173,7 +155,6 @@ const App: React.FC = () => {
       propertyId,
       fileName: file.name,
       fileType: file.type,
-      documentType: 'extracting...',
       fileDataUrl: dataUrl,
       expiryDate: 'extracting...'
     };
@@ -186,12 +167,12 @@ const App: React.FC = () => {
             ...tempDoc,
             id: `doc_${Date.now()}`,
             expiryDate: documentInfo.expiryDate,
-            documentType: documentInfo.documentType,
         };
         
-        setDocuments(prev => prev.map(d => d.id === tempId ? finalDoc : d).sort((a, b) => a.fileName.localeCompare(b.fileName)));
+        setDocuments(prev => prev.map(d => d.id === tempId ? finalDoc : d));
     } catch (e) {
-        setDocuments(prev => prev.map(d => d.id === tempId ? {...d, expiryDate: 'extraction-failed', documentType: null } : d));
+        console.error("Failed to extract document info", e);
+        setDocuments(prev => prev.map(d => d.id === tempId ? {...d, expiryDate: 'extraction-failed'} : d));
     }
   };
 
@@ -210,37 +191,19 @@ const App: React.FC = () => {
 
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard properties={properties} maintenanceRequests={maintenanceRequests} tenants={tenants} documents={documents} setCurrentView={setCurrentView} />;
+        return <Dashboard properties={properties} maintenanceRequests={maintenanceRequests} tenants={tenants} />;
       case 'properties':
-        return <Properties properties={properties} onSelectProperty={handleSelectProperty} onAddProperty={handleAddProperty} />;
+        return <Properties properties={properties} onSelectProperty={handleSelectProperty} />;
       case 'tenants':
         return <Tenants tenants={tenants} properties={properties} onAddTenant={handleAddTenant} />;
       case 'maintenance':
-        return <Maintenance 
-                    maintenanceRequests={maintenanceRequests} 
-                    properties={properties} 
-                    tradespeople={tradespeople}
-                    onAddRequest={handleAddRequest}
-                    onUpdateRequest={handleUpdateMaintenanceRequest}
-                    onCompleteRequest={handleCompleteMaintenanceAndAddExpense}
-                    fileToDataUrl={fileToDataUrl}
-                />;
-      case 'documents':
-        return <Documents 
-                    documents={documents} 
-                    properties={properties} 
-                    onAddDocument={handleAddDocument} 
-                />;
-      case 'tradespeople':
-        return <Tradespeople tradespeople={tradespeople} onAddTradesperson={handleAddTradesperson} />;
+        return <Maintenance maintenanceRequests={maintenanceRequests} properties={properties} onAddRequest={handleAddRequest} />;
       case 'finance':
         return <Finance properties={properties} transactions={transactions} onAddTransaction={handleAddTransaction} />;
-      case 'reports':
-        return <Reports properties={properties} transactions={transactions} />;
       case 'guidance':
         return <Guidance />;
       default:
-        return <Dashboard properties={properties} maintenanceRequests={maintenanceRequests} tenants={tenants} documents={documents} setCurrentView={setCurrentView} />;
+        return <Dashboard properties={properties} maintenanceRequests={maintenanceRequests} tenants={tenants} />;
     }
   };
 
